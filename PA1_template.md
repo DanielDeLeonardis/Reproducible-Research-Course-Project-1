@@ -1,15 +1,8 @@
----
-title: "Reproducible Research Course Project 1"
-author: "Daniel De Leonardis"
-date: "20 May 2017"
-output: 
-  html_document: 
-    keep_md: yes
----
+# Reproducible Research Course Project 1
+Daniel De Leonardis  
+20 May 2017  
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+
 
 ## Introduction
 
@@ -33,7 +26,8 @@ The dataset is stored in a comma-separated-value (CSV) file and there are a tota
 
 Define the libraries used, load the activity file and convert the date field to a 'Date' type
 
-```{r message=FALSE, warning=FALSE}
+
+```r
 library(dplyr)
 library(lattice)
 library(chron)
@@ -44,13 +38,24 @@ activity <- mutate(activity, date = as.Date(date, format = "%Y-%m-%d"))
 head(activity)
 ```
 
+```
+##   steps       date interval
+## 1    NA 2012-10-01        0
+## 2    NA 2012-10-01        5
+## 3    NA 2012-10-01       10
+## 4    NA 2012-10-01       15
+## 5    NA 2012-10-01       20
+## 6    NA 2012-10-01       25
+```
+
 ## What is mean total number of steps taken per day?
 
 For this part of the assignment, you can ignore the missing values in the dataset.
 
 1. Calculate the total number of steps taken per day
 
-```{r}
+
+```r
 activityByDate <-
     activity %>%
     na.omit() %>%
@@ -60,34 +65,60 @@ activityByDate <-
 head(activityByDate)
 ```
 
+```
+## # A tibble: 6 x 2
+##         date totalSteps
+##       <date>      <int>
+## 1 2012-10-02        126
+## 2 2012-10-03      11352
+## 3 2012-10-04      12116
+## 4 2012-10-05      13294
+## 5 2012-10-06      15420
+## 6 2012-10-07      11015
+```
+
 2. If you do not understand the difference between a histogram and a barplot, research the difference between them. Make a histogram of the total number of steps taken each day
 
-```{r}
+
+```r
 hist(activityByDate$totalSteps,
      xlab = "Total Steps",
      main = "Histogram of Number of Steps By Day",
      col = "steelblue")
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
+
 Calculate and report the mean and median of the total number of steps taken per day
 
 **Mean:**
-```{r}
+
+```r
 meanSteps <- mean(activityByDate$totalSteps)
 meanSteps
 ```
 
+```
+## [1] 10766.19
+```
+
 **Median:**
-```{r}
+
+```r
 medianSteps <- median(activityByDate$totalSteps)
 medianSteps
+```
+
+```
+## [1] 10765
 ```
 
 ## What is the average daily activity pattern?
 
 1. Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 
-```{r}
+
+```r
 activityByInterval <-
     activity %>%
     na.omit() %>%
@@ -95,7 +126,21 @@ activityByInterval <-
     summarise(meanSteps = mean(steps))
 
 head(activityByInterval)
+```
 
+```
+## # A tibble: 6 x 2
+##   interval meanSteps
+##      <int>     <dbl>
+## 1        0 1.7169811
+## 2        5 0.3396226
+## 3       10 0.1320755
+## 4       15 0.1509434
+## 5       20 0.0754717
+## 6       25 2.0943396
+```
+
+```r
 with(activityByInterval,
     plot( interval,
           meanSteps,
@@ -108,11 +153,21 @@ with(activityByInterval,
      )
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
+
 2. Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
 
-```{r}
+
+```r
 interval <- filter(activityByInterval, meanSteps == max(meanSteps)) %>% select(interval)
 interval
+```
+
+```
+## # A tibble: 1 x 1
+##   interval
+##      <int>
+## 1      835
 ```
 
 ## Imputing missing values
@@ -121,8 +176,13 @@ Note that there are a number of days/intervals where there are missing values (c
 
 1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
 
-```{r}
+
+```r
 sum(is.na(activity))
+```
+
+```
+## [1] 2304
 ```
 
 2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
@@ -132,50 +192,106 @@ Strategy chosen is to replace missing values with the mean for that 5-minute int
 3. Create a new dataset that is equal to the original dataset but with the missing data filled in.
 Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day.
 
-```{r}
+
+```r
 missingActivities <- which(is.na(activity) == TRUE) 
 head(missingActivities)
 ```
 
+```
+## [1] 1 2 3 4 5 6
+```
+
 Replace the missing steps (NA's) with the average steps from the interval summary  
 Activity col 1 = steps, col 3 = interval, activity by interval col 2 = steps
-```{r}
+
+```r
 adjActivity <- activity
 adjActivity[missingActivities, 1] <-
     activityByInterval[activityByInterval$interval == activity[missingActivities, 3], 2]
 head(adjActivity)
+```
 
+```
+##       steps       date interval
+## 1 1.7169811 2012-10-01        0
+## 2 0.3396226 2012-10-01        5
+## 3 0.1320755 2012-10-01       10
+## 4 0.1509434 2012-10-01       15
+## 5 0.0754717 2012-10-01       20
+## 6 2.0943396 2012-10-01       25
+```
+
+```r
 adjActivityByDate <-
     adjActivity %>%
     na.omit() %>%
     group_by(date) %>%
     summarise(totalSteps = sum(steps))
 head(adjActivityByDate)
+```
 
+```
+## # A tibble: 6 x 2
+##         date totalSteps
+##       <date>      <dbl>
+## 1 2012-10-01   10766.19
+## 2 2012-10-02     126.00
+## 3 2012-10-03   11352.00
+## 4 2012-10-04   12116.00
+## 5 2012-10-05   13294.00
+## 6 2012-10-06   15420.00
+```
+
+```r
 hist(adjActivityByDate$totalSteps,
      xlab = "Total Steps",
      main = "Histogram of Number of Steps By Day\nMissing steps replaced with the mean for 5-minute interval",
      col = "steelblue")
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+
 Do these values differ from the estimates from the first part of the assignment?
 
 **Adjusted Mean:**
-```{r}
+
+```r
 adjMeanSteps <- mean(adjActivityByDate$totalSteps)
 adjMeanSteps
 ```
 
+```
+## [1] 10766.19
+```
+
 **Adjusted Median:**
-```{r}
+
+```r
 adjMedianSteps <- median(adjActivityByDate$totalSteps)
 adjMedianSteps
 ```
 
+```
+## [1] 10765.59
+```
+
 **Diference to orginal mean and median respectively:**
-```{r}
+
+```r
 meanSteps - adjMeanSteps
+```
+
+```
+## [1] 0
+```
+
+```r
 medianSteps - adjMedianSteps
+```
+
+```
+## [1] -0.5943396
 ```
 
 What is the impact of imputing missing data on the estimates of the total daily number of steps?
@@ -188,11 +304,24 @@ For this part the weekdays() function may be of some help here. Use the dataset 
 
 1. Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day.
 
-```{r}
+
+```r
 adjActivity$dayType <- as.factor(ifelse(is.weekend(adjActivity$date), 'weekend', 'weekday'))
 
 head(activity)
+```
 
+```
+##   steps       date interval
+## 1    NA 2012-10-01        0
+## 2    NA 2012-10-01        5
+## 3    NA 2012-10-01       10
+## 4    NA 2012-10-01       15
+## 5    NA 2012-10-01       20
+## 6    NA 2012-10-01       25
+```
+
+```r
 activityByDayTypeAndInterval <-
     adjActivity %>%
     na.omit() %>%
@@ -202,9 +331,25 @@ activityByDayTypeAndInterval <-
 head(activityByDayTypeAndInterval)
 ```
 
+```
+## Source: local data frame [6 x 3]
+## Groups: dayType [1]
+## 
+## # A tibble: 6 x 3
+##   dayType interval meanSteps
+##    <fctr>    <int>     <dbl>
+## 1 weekday        0 2.3179245
+## 2 weekday        5 0.4584906
+## 3 weekday       10 0.1783019
+## 4 weekday       15 0.2037736
+## 5 weekday       20 0.1018868
+## 6 weekday       25 1.5273585
+```
+
 2. Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See the README file in the GitHub repository to see an example of what this plot should look like using simulated data.
 
-```{r}
+
+```r
 xyplot(meanSteps ~ interval | dayType,
        data=activityByDayTypeAndInterval,
        layout=c(1, 2),
@@ -212,3 +357,5 @@ xyplot(meanSteps ~ interval | dayType,
        ylab = "Number of Steps",
        xlab = "Interval")
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-15-1.png)<!-- -->
